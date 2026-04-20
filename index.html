@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>이모지 서바이벌 (Emoji Survivor)</title>
+    <title>탕탕 이모지 특공대</title>
     <style>
         body {
             margin: 0;
@@ -39,10 +39,29 @@
             height: 100%;
         }
 
+        /* 경험치 바 (최상단) */
+        #exp-bar-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 12px;
+            background-color: #333;
+            z-index: 6;
+        }
+
+        #exp-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            box-shadow: 0 0 10px #00f2fe;
+            transition: width 0.2s;
+        }
+
         /* 상단 UI */
         #ui-layer {
             position: absolute;
-            top: 0;
+            top: 15px;
             left: 0;
             width: 100%;
             padding: 15px;
@@ -60,14 +79,24 @@
             border-radius: 12px;
             border: 2px solid #0f3460;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         #score-display {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #e94560;
             text-shadow: 0 0 5px #e94560;
             margin-bottom: 5px;
+        }
+
+        #level-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 0 0 5px #f1c40f;
         }
 
         #hp-bar-container {
@@ -77,6 +106,7 @@
             border: 2px solid #fff;
             border-radius: 10px;
             overflow: hidden;
+            margin-top: 5px;
         }
 
         #hp-bar {
@@ -93,7 +123,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 4; /* UI보단 아래, 캔버스보단 위 */
+            z-index: 4;
         }
 
         .joystick-base {
@@ -120,7 +150,7 @@
             pointer-events: none;
         }
 
-        /* 오버레이 (시작, 게임오버 화면) */
+        /* 오버레이 화면들 */
         .overlay {
             position: absolute;
             top: 0;
@@ -172,7 +202,70 @@
             box-shadow: 0 0px 0px #b71c1c;
         }
 
-        /* 데미지 이펙트 */
+        /* 레벨 업 스킬 선택 화면 */
+        #level-up-screen {
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 20;
+        }
+
+        #level-up-screen h1 {
+            color: #f1c40f;
+            text-shadow: 0 0 15px #f39c12;
+            margin-bottom: 30px;
+        }
+
+        .skill-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        .skill-card {
+            background: linear-gradient(to right, #0f3460, #16213e);
+            border: 2px solid #4facfe;
+            border-radius: 15px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+        }
+
+        .skill-card:active {
+            transform: scale(0.95);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
+        }
+
+        .skill-icon {
+            font-size: 2.5rem;
+            margin-right: 15px;
+        }
+
+        .skill-info h3 {
+            margin: 0 0 5px 0;
+            color: #fff;
+            font-size: 1.2rem;
+        }
+
+        .skill-info p {
+            margin: 0;
+            color: #aaa;
+            font-size: 0.9rem;
+            text-align: left;
+            font-weight: normal;
+        }
+
+        /* 화면 흔들림 */
+        .shake { animation: shake 0.2s; }
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(-5px, 5px); }
+            50% { transform: translate(5px, -5px); }
+            75% { transform: translate(-5px, -5px); }
+        }
+       
         #damage-flash {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -182,18 +275,7 @@
             z-index: 8;
             transition: opacity 0.1s;
         }
-        
-        /* 화면 흔들림 */
-        .shake {
-            animation: shake 0.2s;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(-5px, 5px); }
-            50% { transform: translate(5px, -5px); }
-            75% { transform: translate(-5px, -5px); }
-        }
-        
+
         @media (min-width: 600px) {
             #game-container { border-radius: 15px; height: 90vh; }
         }
@@ -203,9 +285,10 @@
 <body>
 
     <div id="game-container">
+        <div id="exp-bar-container"><div id="exp-bar"></div></div>
         <div id="damage-flash"></div>
         <canvas id="gameCanvas" width="600" height="800"></canvas>
-        
+       
         <div id="joystick-zone">
             <div class="joystick-base" id="joystick-base">
                 <div class="joystick-stick" id="joystick-stick"></div>
@@ -214,24 +297,33 @@
 
         <div id="ui-layer">
             <div class="stat-box">
-                <div id="score-display">점수: <span id="score">0</span></div>
+                <div id="level-display">Lv.<span id="level">1</span></div>
+                <div id="score-display">처치: <span id="score">0</span></div>
             </div>
-            <div class="stat-box">
+            <div class="stat-box" style="justify-content: center;">
+                <div style="font-weight: bold; margin-bottom: 2px;">HP</div>
                 <div id="hp-bar-container">
                     <div id="hp-bar"></div>
                 </div>
             </div>
         </div>
 
+        <!-- 레벨 업 화면 -->
+        <div id="level-up-screen" class="overlay" style="display: none;">
+            <h1>레벨 업! 🎉</h1>
+            <div class="skill-container" id="skill-container">
+                <!-- 스킬 카드가 JS로 동적 생성됨 -->
+            </div>
+        </div>
+
         <!-- 시작 화면 -->
         <div id="start-screen" class="overlay">
-            <h1>🛸 우주 서바이벌</h1>
+            <h1>🛸 탕탕 이모지<br>특공대</h1>
             <p>
-                <strong>[PC]</strong> 방향키 또는 WASD 이동<br>
+                <strong>[PC]</strong> WASD 이동, F 수동 연사<br>
                 <strong>[모바일]</strong> 화면을 드래그하여 이동<br><br>
-                가장 가까운 적을 향해 <span class="highlight">자동으로 사격</span>합니다!<br>
-                <span style="color:#00f2fe; font-weight:bold;">F키</span>를 꾹 누르면 수동으로 <span class="highlight">빠르게 연사</span>합니다 🔫<br>
-                몰려오는 외계인들을 요리조리 피하세요.
+                적을 물리치고 보석(💠)을 모아 레벨 업 하세요!<br>
+                자동 사격으로 몰려오는 적들을 파괴하세요.
             </p>
             <button id="start-btn">출동하기</button>
         </div>
@@ -240,7 +332,7 @@
         <div id="game-over-screen" class="overlay" style="display: none;">
             <h1 style="color: #ff5252;">포위당했습니다! 💥</h1>
             <p>우주선이 파괴되었습니다...</p>
-            <h2 style="color: #4facfe; margin-bottom: 20px;">처치한 적: <span id="final-score">0</span> 마리</h2>
+            <h2 style="color: #4facfe; margin-bottom: 20px;">달성 레벨: Lv.<span id="final-level">1</span></h2>
             <button id="restart-btn">재도전</button>
         </div>
     </div>
@@ -249,14 +341,19 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameContainer = document.getElementById('game-container');
-        
+       
         const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const expBarElement = document.getElementById('exp-bar');
         const hpBarElement = document.getElementById('hp-bar');
         const damageFlash = document.getElementById('damage-flash');
-        
+       
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
-        const finalScoreElement = document.getElementById('final-score');
+        const levelUpScreen = document.getElementById('level-up-screen');
+        const skillContainer = document.getElementById('skill-container');
+        const finalLevelElement = document.getElementById('final-level');
+       
         const startBtn = document.getElementById('start-btn');
         const restartBtn = document.getElementById('restart-btn');
 
@@ -269,75 +366,76 @@
         const CANVAS_HEIGHT = 800;
 
         let isGameRunning = false;
+        let isPaused = false;
         let animationId;
         let lastTime = 0;
 
         let score = 0;
-        let gameTime = 0; // 생존 시간 (난이도 증가용)
+        let gameTime = 0;
 
-        // 카메라 (플레이어를 따라다님)
+        // 카메라
         let camera = { x: 0, y: 0 };
 
-        // 플레이어 객체
+        // 플레이어 객체 및 스킬 스탯
         const player = {
-            x: 0,
-            y: 0,
+            x: 0, y: 0,
             size: 40,
-            speed: 250, // 이동 속도
-            hp: 100,
-            maxHp: 100,
+            hp: 100, maxHp: 100,
             emoji: '🛸',
-            shootTimer: 0,
-            shootInterval: 0.3, // 0.3초마다 발사
-            attackRange: 350 // 자동 조준 사거리
+            level: 1, exp: 0, maxExp: 5,
+            skills: {
+                damage: 10,
+                fireRate: 0.3,
+                speed: 250,
+                projectiles: 1, // 한 번에 쏘는 총알 수
+                attackRange: 350
+            },
+            shootTimer: 0
         };
+
+        // 스킬 풀 (레벨업 시 등장)
+        const SKILL_POOL = [
+            { id: 'dmg', name: "공격력 증가", desc: "레이저의 데미지가 5 증가합니다.", icon: "⚔️", apply: () => player.skills.damage += 5 },
+            { id: 'spd', name: "연사 속도 증가", desc: "레이저 발사 간격이 짧아집니다.", icon: "⚡", apply: () => player.skills.fireRate = Math.max(0.05, player.skills.fireRate - 0.05) },
+            { id: 'mov', name: "이동 속도 증가", desc: "우주선의 이동 속도가 빨라집니다.", icon: "🏃", apply: () => player.skills.speed += 30 },
+            { id: 'mul', name: "다중 발사", desc: "한 번에 발사되는 레이저 개수가 1 증가합니다.", icon: "🚀", apply: () => player.skills.projectiles += 1 },
+            { id: 'heal', name: "긴급 수리", desc: "우주선의 체력을 30 회복합니다.", icon: "💖", apply: () => player.hp = Math.min(player.maxHp, player.hp + 30) },
+            { id: 'rng', name: "사거리 증가", desc: "적을 감지하는 범위가 넓어집니다.", icon: "📡", apply: () => player.skills.attackRange += 50 }
+        ];
 
         // 개체 배열
         let enemies = [];
         let bullets = [];
         let particles = [];
-        let expGems = []; // (옵션) 경험치 보석용이지만 여기선 점수만 올림
+        let expGems = [];
 
-        // 입력 상태 (e.code 사용으로 한글 모드에서도 작동하도록 수정)
+        // 입력 상태
         const keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyF: false };
-        let joystick = { active: false, originX: 0, originY: 0, dx: 0, dy: 0, distance: 0 };
+        let joystick = { active: false, originX: 0, originY: 0, dx: 0, dy: 0 };
 
         // --- 입력 처리 ---
-        window.addEventListener('keydown', (e) => { 
-            if(keys.hasOwnProperty(e.code)) {
-                keys[e.code] = true; 
-                e.preventDefault(); // 한글 모드(IME)에서 키 떼짐이 무시되는 현상 완벽 방지
-            }
+        window.addEventListener('keydown', (e) => {
+            if(keys.hasOwnProperty(e.code)) { keys[e.code] = true; e.preventDefault(); }
         });
-        
-        window.addEventListener('keyup', (e) => { 
-            if(keys.hasOwnProperty(e.code)) {
-                keys[e.code] = false; 
-                e.preventDefault();
-            }
+        window.addEventListener('keyup', (e) => {
+            if(keys.hasOwnProperty(e.code)) { keys[e.code] = false; e.preventDefault(); }
         });
-
-        // 화면 밖으로 마우스가 나갔을 때(포커스 잃음) 키 눌림 고정 방지
         window.addEventListener('blur', () => {
-            for (let key in keys) {
-                keys[key] = false;
-            }
+            for (let key in keys) keys[key] = false;
             joystick.active = false;
             joystickBase.style.display = 'none';
         });
 
-        // 모바일 조이스틱 처리
+        // 모바일 조이스틱
         joystickZone.addEventListener('touchstart', (e) => {
-            if (!isGameRunning) return;
+            if (!isGameRunning || isPaused) return;
             e.preventDefault();
             const touch = e.touches[0];
             const rect = joystickZone.getBoundingClientRect();
-            
             joystick.active = true;
             joystick.originX = touch.clientX - rect.left;
             joystick.originY = touch.clientY - rect.top;
             joystick.dx = 0; joystick.dy = 0;
-
             joystickBase.style.display = 'block';
             joystickBase.style.left = `${joystick.originX}px`;
             joystickBase.style.top = `${joystick.originY}px`;
@@ -345,92 +443,121 @@
         }, { passive: false });
 
         joystickZone.addEventListener('touchmove', (e) => {
-            if (!joystick.active) return;
+            if (!joystick.active || isPaused) return;
             e.preventDefault();
             const touch = e.touches[0];
             const rect = joystickZone.getBoundingClientRect();
-            
             let currentX = touch.clientX - rect.left;
             let currentY = touch.clientY - rect.top;
-            
             let dx = currentX - joystick.originX;
             let dy = currentY - joystick.originY;
             let distance = Math.hypot(dx, dy);
-            
-            // 조이스틱 최대 반경 제한
             const maxDist = 50;
-            if (distance > maxDist) {
-                dx = (dx / distance) * maxDist;
-                dy = (dy / distance) * maxDist;
-                distance = maxDist;
-            }
-
-            joystick.dx = dx / maxDist; // -1.0 ~ 1.0 정규화
-            joystick.dy = dy / maxDist;
-            
+            if (distance > maxDist) { dx = (dx / distance) * maxDist; dy = (dy / distance) * maxDist; distance = maxDist; }
+            joystick.dx = dx / maxDist; joystick.dy = dy / maxDist;
             joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
         }, { passive: false });
 
         const endJoystick = () => {
-            joystick.active = false;
-            joystick.dx = 0; joystick.dy = 0;
+            joystick.active = false; joystick.dx = 0; joystick.dy = 0;
             joystickBase.style.display = 'none';
         };
         joystickZone.addEventListener('touchend', endJoystick);
         joystickZone.addEventListener('touchcancel', endJoystick);
 
         // --- 게임 로직 ---
-
         function initGame() {
-            player.x = 0;
-            player.y = 0;
-            player.hp = player.maxHp;
-            
-            score = 0;
-            gameTime = 0;
-            enemies = [];
-            bullets = [];
-            particles = [];
-            
+            player.x = 0; player.y = 0;
+            player.maxHp = 100; player.hp = 100;
+            player.level = 1; player.exp = 0; player.maxExp = 5;
+            player.skills = { damage: 10, fireRate: 0.3, speed: 250, projectiles: 1, attackRange: 350 };
+            player.shootTimer = 0;
+           
+            score = 0; gameTime = 0;
+            enemies = []; bullets = []; particles = []; expGems = [];
+           
             updateUI();
             startScreen.style.display = 'none';
             gameOverScreen.style.display = 'none';
+            levelUpScreen.style.display = 'none';
             gameContainer.classList.remove('shake');
-            
-            isGameRunning = true;
+           
+            isGameRunning = true; isPaused = false;
             lastTime = performance.now();
             animationId = requestAnimationFrame(gameLoop);
         }
 
         function updateUI() {
             scoreElement.innerText = score;
-            const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
-            hpBarElement.style.width = `${hpPercent}%`;
+            levelElement.innerText = player.level;
+            hpBarElement.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+            expBarElement.style.width = `${Math.max(0, (player.exp / player.maxExp) * 100)}%`;
         }
 
         function gameOver() {
             isGameRunning = false;
-            finalScoreElement.innerText = score;
+            finalLevelElement.innerText = player.level;
             gameOverScreen.style.display = 'flex';
             endJoystick();
         }
 
-        // 화면 밖 테두리에서 적 스폰
+        // 레벨업 시스템
+        function gainExp(amount) {
+            player.exp += amount;
+            if (player.exp >= player.maxExp) {
+                player.exp -= player.maxExp;
+                player.level++;
+                player.maxExp = Math.floor(player.maxExp * 1.5); // 다음 요구 경험치 증가
+                triggerLevelUp();
+            }
+            updateUI();
+        }
+
+        function triggerLevelUp() {
+            isPaused = true;
+            endJoystick();
+           
+            // 스킬 3개 랜덤 추출 (중복 없이)
+            let shuffled = [...SKILL_POOL].sort(() => 0.5 - Math.random());
+            let selectedSkills = shuffled.slice(0, 3);
+           
+            skillContainer.innerHTML = '';
+            selectedSkills.forEach(skill => {
+                let card = document.createElement('div');
+                card.className = 'skill-card';
+                card.innerHTML = `
+                    <div class="skill-icon">${skill.icon}</div>
+                    <div class="skill-info">
+                        <h3>${skill.name}</h3>
+                        <p>${skill.desc}</p>
+                    </div>
+                `;
+                card.onclick = () => {
+                    skill.apply();
+                    levelUpScreen.style.display = 'none';
+                    isPaused = false;
+                    lastTime = performance.now(); // 시간 튀는 것 방지
+                };
+                skillContainer.appendChild(card);
+            });
+           
+            levelUpScreen.style.display = 'flex';
+        }
+
         function spawnEnemy() {
-            // 카메라 중심(플레이어 근처)에서 화면 바깥쪽에 생성
             const angle = Math.random() * Math.PI * 2;
-            const distance = CANVAS_WIDTH; // 화면 대각선 길이 정도 떨어져서
-            
+            const distance = CANVAS_WIDTH;
+           
             const types = [
-                { emoji: '👾', hp: 20, speed: 100, size: 35 },
-                { emoji: '👽', hp: 30, speed: 80, size: 40 },
-                { emoji: '👻', hp: 10, speed: 150, size: 30 } // 빠름
+                { emoji: '👾', hp: 20, speed: 100, size: 35, exp: 1 },
+                { emoji: '👽', hp: 30, speed: 80, size: 40, exp: 1 },
+                { emoji: '👻', hp: 10, speed: 150, size: 30, exp: 1 },
+                { emoji: '👹', hp: 80, speed: 60, size: 50, exp: 5 } // 보스급(가끔 나옴)
             ];
-            
-            let type = types[Math.floor(Math.random() * types.length)];
-            
-            // 시간이 지날수록 적 체력/속도 증가
-            let hpMultiplier = 1 + (gameTime / 60); // 1분마다 2배
+           
+            let type = (Math.random() < 0.05) ? types[3] : types[Math.floor(Math.random() * 3)];
+           
+            let hpMultiplier = 1 + (gameTime / 60);
             let speedMultiplier = 1 + (gameTime / 120);
 
             enemies.push({
@@ -441,33 +568,31 @@
                 speed: type.speed * speedMultiplier,
                 size: type.size,
                 emoji: type.emoji,
+                exp: type.exp,
                 wobble: Math.random() * Math.PI * 2
             });
         }
 
         function createExplosion(x, y, emojiStr) {
-            for(let i=0; i<5; i++) {
+            for(let i=0; i<4; i++) {
                 particles.push({
                     x: x, y: y,
-                    vx: (Math.random() - 0.5) * 200,
-                    vy: (Math.random() - 0.5) * 200,
-                    life: 0.2 + Math.random() * 0.3,
-                    size: 10 + Math.random() * 10,
+                    vx: (Math.random() - 0.5) * 200, vy: (Math.random() - 0.5) * 200,
+                    life: 0.2 + Math.random() * 0.2, size: 10 + Math.random() * 10,
                     color: Math.random() > 0.5 ? '#e94560' : '#4facfe'
                 });
             }
             if(emojiStr) {
-                particles.push({ x: x, y: y, vx: 0, vy: -50, life: 0.4, size: 30, emoji: emojiStr });
+                particles.push({ x: x, y: y, vx: 0, vy: -50, life: 0.3, size: 25, emoji: emojiStr });
             }
         }
 
         function checkCollision(a, b) {
-            const dx = a.x - b.x;
-            const dy = a.y - b.y;
-            return Math.sqrt(dx*dx + dy*dy) < (a.size/2 + b.size/2);
+            return Math.hypot(a.x - b.x, a.y - b.y) < (a.size/2 + b.size/2);
         }
 
         function update(deltaTime) {
+            if (isPaused) return;
             gameTime += deltaTime;
 
             // 1. 플레이어 이동
@@ -477,88 +602,85 @@
             if (keys.KeyA || keys.ArrowLeft) moveX -= 1;
             if (keys.KeyD || keys.ArrowRight) moveX += 1;
 
-            if (joystick.active) {
-                moveX = joystick.dx;
-                moveY = joystick.dy;
-            }
+            if (joystick.active) { moveX = joystick.dx; moveY = joystick.dy; }
 
-            // 대각선 정규화
             if (moveX !== 0 || moveY !== 0) {
                 const len = Math.hypot(moveX, moveY);
-                // 조이스틱의 경우 이미 정규화되어 있지만, 키보드를 위해 1을 초과하지 않게 함
-                if (len > 1 || !joystick.active) { 
-                    moveX /= len; moveY /= len;
-                }
+                if (len > 1 || !joystick.active) { moveX /= len; moveY /= len; }
             }
 
-            player.x += moveX * player.speed * deltaTime;
-            player.y += moveY * player.speed * deltaTime;
+            player.x += moveX * player.skills.speed * deltaTime;
+            player.y += moveY * player.skills.speed * deltaTime;
 
-            // 카메라 이동 (플레이어 추적)
             camera.x += (player.x - camera.x) * 5 * deltaTime;
             camera.y += (player.y - camera.y) * 5 * deltaTime;
 
-            // 2. 자동 사격 및 F키 수동 연사 로직
-            player.shootTimer += deltaTime;
-            
-            // 기본 자동 사격 간격이거나, F키를 눌렀을 때 0.1초(빠른 연사)가 지났으면 발사
-            let canShoot = false;
-            if (player.shootTimer >= player.shootInterval) canShoot = true;
-            if (keys.KeyF && player.shootTimer >= 0.1) canShoot = true;
-
-            if (canShoot) {
-                let nearestEnemy = null;
-                let minDist = player.attackRange;
-
-                for (let e of enemies) {
-                    let dist = Math.hypot(e.x - player.x, e.y - player.y);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        nearestEnemy = e;
+            // 2. 보석(경험치) 획득 (자석 범위 살짝 넓게)
+            let magnetRange = player.size + 40;
+            for (let i = expGems.length - 1; i >= 0; i--) {
+                let gem = expGems[i];
+                let dist = Math.hypot(gem.x - player.x, gem.y - player.y);
+               
+                if (dist < magnetRange) {
+                    // 끌려오는 애니메이션
+                    gem.x += (player.x - gem.x) * 10 * deltaTime;
+                    gem.y += (player.y - gem.y) * 10 * deltaTime;
+                   
+                    if (dist < player.size/2) {
+                        gainExp(gem.value);
+                        expGems.splice(i, 1);
                     }
-                }
-
-                if (nearestEnemy) {
-                    // 총알 발사
-                    let angle = Math.atan2(nearestEnemy.y - player.y, nearestEnemy.x - player.x);
-                    bullets.push({
-                        x: player.x,
-                        y: player.y,
-                        vx: Math.cos(angle) * 800,
-                        vy: Math.sin(angle) * 800,
-                        size: 15,
-                        life: 1.0, // 1초 뒤 사라짐
-                        damage: 10 + (score * 0.1), // 점수에 따라 공격력 증가
-                        angle: angle
-                    });
-                    player.shootTimer = 0; // 타이머 초기화
                 }
             }
 
-            // 3. 총알 이동 및 충돌
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                b.x += b.vx * deltaTime;
-                b.y += b.vy * deltaTime;
-                b.life -= deltaTime;
+            // 3. 자동 사격 및 다중 발사 로직
+            player.shootTimer += deltaTime;
+            let canShoot = (player.shootTimer >= player.skills.fireRate) || (keys.KeyF && player.shootTimer >= 0.1);
 
-                if (b.life <= 0) {
-                    bullets.splice(i, 1);
-                    continue;
+            if (canShoot) {
+                let nearestEnemy = null;
+                let minDist = player.skills.attackRange;
+
+                for (let e of enemies) {
+                    let dist = Math.hypot(e.x - player.x, e.y - player.y);
+                    if (dist < minDist) { minDist = dist; nearestEnemy = e; }
                 }
 
-                // 적 충돌 검사
+                if (nearestEnemy) {
+                    let baseAngle = Math.atan2(nearestEnemy.y - player.y, nearestEnemy.x - player.x);
+                    let count = player.skills.projectiles;
+                    let spread = 0.2; // 방사 각도
+                    let startAngle = baseAngle - (spread * (count - 1)) / 2;
+
+                    for (let i = 0; i < count; i++) {
+                        let angle = startAngle + (spread * i);
+                        bullets.push({
+                            x: player.x, y: player.y,
+                            vx: Math.cos(angle) * 800, vy: Math.sin(angle) * 800,
+                            size: 15, life: 1.0, damage: player.skills.damage, angle: angle
+                        });
+                    }
+                    player.shootTimer = 0;
+                }
+            }
+
+            // 4. 총알 이동 및 충돌
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx * deltaTime; b.y += b.vy * deltaTime; b.life -= deltaTime;
+                if (b.life <= 0) { bullets.splice(i, 1); continue; }
+
                 for (let j = enemies.length - 1; j >= 0; j--) {
                     let e = enemies[j];
                     if (checkCollision(b, e)) {
                         e.hp -= b.damage;
-                        bullets.splice(i, 1); // 관통 안됨
-                        
-                        // 타격 이펙트
+                        bullets.splice(i, 1);
                         createExplosion(b.x, b.y);
-                        
+                       
                         if (e.hp <= 0) {
                             score += 1;
+                            // 죽은 위치에 보석 떨구기
+                            expGems.push({ x: e.x, y: e.y, value: e.exp, size: 10, wobble: Math.random()*10 });
                             createExplosion(e.x, e.y, '💥');
                             enemies.splice(j, 1);
                             updateUI();
@@ -568,24 +690,20 @@
                 }
             }
 
-            // 4. 적 생성 (갈수록 많이 나옴)
-            let spawnRate = Math.max(0.2, 1.0 - (gameTime / 60)); // 최소 0.2초마다 스폰
-            if (Math.random() < deltaTime / spawnRate) {
-                spawnEnemy();
-            }
+            // 5. 적 스폰 및 이동
+            let spawnRate = Math.max(0.2, 1.0 - (gameTime / 60));
+            if (Math.random() < deltaTime / spawnRate) spawnEnemy();
 
-            // 5. 적 이동 (플레이어 향해) 및 피격
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i];
                 let angle = Math.atan2(player.y - e.y, player.x - e.x);
-                
-                // 밀집도 해결 (적끼리 서로 밀어내기 - 간단 버전)
+               
+                // 적끼리 밀어내기
                 for(let j = 0; j < enemies.length; j++) {
                     if(i === j) continue;
                     let other = enemies[j];
-                    let dist = Math.hypot(e.x - other.x, e.y - other.y);
-                    if(dist < (e.size + other.size)/2) {
-                        e.x -= Math.cos(angle) * e.speed * 0.5 * deltaTime; // 서로 밀침
+                    if(Math.hypot(e.x - other.x, e.y - other.y) < (e.size + other.size)/2) {
+                        e.x -= Math.cos(angle) * e.speed * 0.5 * deltaTime;
                         e.y -= Math.sin(angle) * e.speed * 0.5 * deltaTime;
                     }
                 }
@@ -594,48 +712,38 @@
                 e.y += Math.sin(angle) * e.speed * deltaTime;
                 e.wobble += 5 * deltaTime;
 
-                // 플레이어와 충돌 (데미지)
                 if (checkCollision(player, e)) {
-                    player.hp -= 20 * deltaTime; // 닿아있는 동안 초당 20 데미지
-                    
-                    // 시각 효과
+                    player.hp -= 20 * deltaTime;
                     damageFlash.style.opacity = '0.3';
                     setTimeout(() => damageFlash.style.opacity = '0', 50);
-                    
+                   
                     gameContainer.classList.remove('shake');
-                    void gameContainer.offsetWidth; 
+                    void gameContainer.offsetWidth;
                     gameContainer.classList.add('shake');
-                    
+                   
                     updateUI();
                     if (player.hp <= 0) gameOver();
                 }
             }
 
-            // 6. 파티클 업데이트
+            // 파티클 업데이트
             for (let i = particles.length - 1; i >= 0; i--) {
                 let p = particles[i];
-                p.x += p.vx * deltaTime;
-                p.y += p.vy * deltaTime;
-                p.life -= deltaTime;
+                p.x += p.vx * deltaTime; p.y += p.vy * deltaTime; p.life -= deltaTime;
                 if (p.life <= 0) particles.splice(i, 1);
             }
         }
 
         function draw() {
             ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
             ctx.save();
-            // 카메라 중심 맞추기
             ctx.translate(CANVAS_WIDTH / 2 - camera.x, CANVAS_HEIGHT / 2 - camera.y);
 
-            // 바닥 그리드 그리기 (끝없이 이동하는 느낌)
-            ctx.strokeStyle = '#0f3460';
-            ctx.lineWidth = 2;
+            // 바닥 그리드
+            ctx.strokeStyle = '#0f3460'; ctx.lineWidth = 2;
             const gridSize = 100;
-            // 카메라 위치 기반으로 화면에 보이는 그리드만 그림
             let startX = Math.floor((camera.x - CANVAS_WIDTH/2) / gridSize) * gridSize;
             let startY = Math.floor((camera.y - CANVAS_HEIGHT/2) / gridSize) * gridSize;
-            
             ctx.beginPath();
             for (let x = startX; x < startX + CANVAS_WIDTH + gridSize; x += gridSize) {
                 ctx.moveTo(x, startY); ctx.lineTo(x, startY + CANVAS_HEIGHT + gridSize);
@@ -644,6 +752,19 @@
                 ctx.moveTo(startX, y); ctx.lineTo(startX + CANVAS_WIDTH + gridSize, y);
             }
             ctx.stroke();
+
+            // 경험치 보석 그리기
+            for (let gem of expGems) {
+                gem.wobble += 0.1;
+                ctx.fillStyle = gem.value > 1 ? '#f1c40f' : '#00f2fe'; // 보스 보석은 노란색
+                ctx.beginPath();
+                // 마름모 형태
+                ctx.moveTo(gem.x, gem.y - gem.size + Math.sin(gem.wobble)*3);
+                ctx.lineTo(gem.x + gem.size/1.5, gem.y + Math.sin(gem.wobble)*3);
+                ctx.lineTo(gem.x, gem.y + gem.size + Math.sin(gem.wobble)*3);
+                ctx.lineTo(gem.x - gem.size/1.5, gem.y + Math.sin(gem.wobble)*3);
+                ctx.fill();
+            }
 
             // 파티클
             for (let p of particles) {
@@ -662,82 +783,56 @@
             ctx.globalAlpha = 1.0;
 
             // 총알 (레이저)
-            ctx.strokeStyle = '#00f2fe';
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 4; ctx.lineCap = 'round';
             for (let b of bullets) {
-                ctx.beginPath();
-                ctx.moveTo(b.x, b.y);
-                // 날아가는 방향 뒤쪽으로 선 그리기 (꼬리)
+                ctx.beginPath(); ctx.moveTo(b.x, b.y);
                 ctx.lineTo(b.x - Math.cos(b.angle) * b.size, b.y - Math.sin(b.angle) * b.size);
                 ctx.stroke();
             }
 
-            // 적 그리기
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            // 적
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             for (let e of enemies) {
-                ctx.save();
-                ctx.translate(e.x, e.y);
-                // 걷는 느낌의 흔들림
+                ctx.save(); ctx.translate(e.x, e.y);
                 ctx.rotate(Math.sin(e.wobble) * 0.15);
-                
-                // 체력바
                 if (e.hp < e.maxHp) {
-                    ctx.fillStyle = 'red';
-                    ctx.fillRect(-15, -e.size/2 - 10, 30, 4);
-                    ctx.fillStyle = '#4facfe';
-                    ctx.fillRect(-15, -e.size/2 - 10, 30 * (e.hp/e.maxHp), 4);
+                    ctx.fillStyle = 'red'; ctx.fillRect(-15, -e.size/2 - 10, 30, 4);
+                    ctx.fillStyle = '#4facfe'; ctx.fillRect(-15, -e.size/2 - 10, 30 * (e.hp/e.maxHp), 4);
                 }
-                
-                ctx.font = `${e.size}px Arial`;
-                ctx.fillText(e.emoji, 0, 0);
+                ctx.font = `${e.size}px Arial`; ctx.fillText(e.emoji, 0, 0);
                 ctx.restore();
             }
 
-            // 플레이어 그리기
-            ctx.save();
-            ctx.translate(player.x, player.y);
-            
-            // 이동 방향에 따라 살짝 기울어짐
-            let tiltX = 0; let tiltY = 0;
-            if (joystick.active) { tiltX = joystick.dx; tiltY = joystick.dy; }
+            // 플레이어
+            ctx.save(); ctx.translate(player.x, player.y);
+            let tiltX = 0;
+            if (joystick.active) tiltX = joystick.dx;
             else {
                 if (keys.KeyA || keys.ArrowLeft) tiltX = -1;
                 if (keys.KeyD || keys.ArrowRight) tiltX = 1;
             }
             ctx.rotate(tiltX * 0.2);
 
-            // 우주선 아래 엔진 불꽃
-            ctx.font = '25px Arial';
-            ctx.globalAlpha = 0.5 + Math.random() * 0.5;
-            ctx.fillText('🔥', 0, 20);
-            ctx.globalAlpha = 1.0;
-
-            ctx.font = `${player.size}px Arial`;
-            ctx.fillText(player.emoji, 0, 0);
-            
-            // 플레이어 자동조준 사거리 표시 (희미하게)
-            ctx.strokeStyle = 'rgba(79, 172, 254, 0.1)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(0, 0, player.attackRange, 0, Math.PI*2);
-            ctx.stroke();
-            
+            ctx.font = '25px Arial'; ctx.globalAlpha = 0.5 + Math.random() * 0.5;
+            ctx.fillText('🔥', 0, 20); ctx.globalAlpha = 1.0;
+            ctx.font = `${player.size}px Arial`; ctx.fillText(player.emoji, 0, 0);
+           
+            ctx.strokeStyle = 'rgba(79, 172, 254, 0.1)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(0, 0, player.skills.attackRange, 0, Math.PI*2); ctx.stroke();
+           
             ctx.restore();
-            ctx.restore(); // 카메라 변환 원상복구
+            ctx.restore();
         }
 
         function gameLoop(currentTime) {
             if (!isGameRunning) return;
-
             const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
-            if (deltaTime < 0.2) {
+            if (!isPaused && deltaTime < 0.2) {
                 update(deltaTime);
-                draw();
             }
+            draw(); // 멈춰있을 때도 화면은 계속 그려서 검은 화면 방지
 
             if (isGameRunning) {
                 animationId = requestAnimationFrame(gameLoop);
@@ -746,9 +841,7 @@
 
         startBtn.addEventListener('click', initGame);
         restartBtn.addEventListener('click', initGame);
-
-        // 초기 화면
-        draw();
+        draw(); // 초기 화면
 
     </script>
 </body>
