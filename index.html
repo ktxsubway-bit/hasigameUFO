@@ -3,14 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>탕탕 이모지 특공대</title>
+    <title>탕탕 이모지 특공대 - 그레이 에디션</title>
     <style>
+        :root {
+            --primary-bg: #e2e8f0; /* 배경 레이어 */
+            --canvas-bg: #f8fafc;  /* 실제 게임 배경 (연한 회색) */
+            --accent-color: #475569; /* 메인 포인트 (짙은 회색) */
+            --player-bullet: #64748b;
+            --danger-color: #e11d48;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --ui-bg: rgba(255, 255, 255, 0.9);
+            --border-color: #cbd5e1;
+        }
+
         body {
             margin: 0;
             padding: 0;
-            background-color: #1a1a2e; /* 어두운 우주/네온 배경 */
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,7 +30,7 @@
             height: 100dvh;
             min-height: 100vh;
             overflow: hidden;
-            touch-action: none; /* 스와이프 방지 */
+            touch-action: none;
             user-select: none;
         }
 
@@ -28,9 +40,18 @@
             max-width: 600px;
             height: 100%;
             max-height: 800px;
-            background-color: #16213e;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            background-color: var(--canvas-bg);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
             overflow: hidden;
+            border-radius: 0;
+        }
+
+        @media (min-width: 600px) {
+            #game-container {
+                border-radius: 28px;
+                height: 90vh;
+                border: 4px solid #ffffff;
+            }
         }
 
         canvas {
@@ -39,26 +60,23 @@
             height: 100%;
         }
 
-        /* 경험치 바 (최상단) */
         #exp-bar-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: 12px;
-            background-color: #333;
+            height: 6px;
+            background-color: #cbd5e1;
             z-index: 6;
         }
 
         #exp-bar {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, #00f2fe, #4facfe);
-            box-shadow: 0 0 10px #00f2fe;
-            transition: width 0.2s;
+            background: linear-gradient(90deg, #64748b, #94a3b8);
+            transition: width 0.3s ease-out;
         }
 
-        /* 상단 UI */
         #ui-layer {
             position: absolute;
             top: 15px;
@@ -74,49 +92,46 @@
         }
 
         .stat-box {
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 8px 15px;
-            border-radius: 12px;
-            border: 2px solid #0f3460;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            background-color: var(--ui-bg);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
         #score-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #e94560;
-            text-shadow: 0 0 5px #e94560;
-            margin-bottom: 5px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 2px;
         }
 
         #level-display {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #f1c40f;
-            text-shadow: 0 0 5px #f1c40f;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent-color);
         }
 
         #hp-bar-container {
-            width: 150px;
-            height: 20px;
-            background-color: #333;
-            border: 2px solid #fff;
-            border-radius: 10px;
+            width: 110px;
+            height: 10px;
+            background-color: #cbd5e1;
+            border-radius: 5px;
             overflow: hidden;
-            margin-top: 5px;
+            margin-top: 8px;
         }
 
         #hp-bar {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, #ff5252, #e74c3c);
-            transition: width 0.1s;
+            background: #475569;
+            transition: width 0.2s;
         }
 
-        /* 가상 조이스틱 (모바일) */
         #joystick-zone {
             position: absolute;
             top: 0;
@@ -128,10 +143,10 @@
 
         .joystick-base {
             position: absolute;
-            width: 120px;
-            height: 120px;
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            width: 90px;
+            height: 90px;
+            background-color: rgba(15, 23, 42, 0.05);
+            border: 2px dashed rgba(15, 23, 42, 0.2);
             border-radius: 50%;
             transform: translate(-50%, -50%);
             pointer-events: none;
@@ -142,144 +157,105 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 50px;
-            height: 50px;
-            background-color: rgba(255, 255, 255, 0.5);
+            width: 36px;
+            height: 36px;
+            background-color: var(--accent-color);
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        /* 오버레이 화면들 */
         .overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(26, 26, 46, 0.85);
+            background-color: rgba(248, 250, 252, 0.98);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 10;
+            text-align: center;
+            padding: 30px;
+            box-sizing: border-box;
         }
 
         h1 {
-            color: #4facfe;
+            color: var(--text-main);
             margin-bottom: 10px;
-            font-size: 3rem;
-            text-shadow: 0 0 10px #00f2fe;
-            text-align: center;
-            line-height: 1.2;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
         }
 
         p {
-            color: #ecf0f1;
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 1.1rem;
+            color: var(--text-muted);
             line-height: 1.6;
+            margin-bottom: 25px;
         }
 
-        .highlight { color: #f1c40f; font-weight: bold; }
-
         button {
-            padding: 15px 40px;
-            font-size: 1.3rem;
-            font-weight: bold;
-            background-color: #e94560;
+            padding: 16px 40px;
+            font-size: 1rem;
+            font-weight: 700;
+            background-color: var(--accent-color);
             color: white;
             border: none;
-            border-radius: 30px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 5px 0px #b71c1c;
-            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 0 10px 25px rgba(71, 85, 105, 0.2);
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: #1e293b;
+            transform: translateY(-2px);
         }
 
         button:active {
-            transform: translateY(5px);
-            box-shadow: 0 0px 0px #b71c1c;
-        }
-
-        /* 레벨 업 스킬 선택 화면 */
-        #level-up-screen {
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 20;
-        }
-
-        #level-up-screen h1 {
-            color: #f1c40f;
-            text-shadow: 0 0 15px #f39c12;
-            margin-bottom: 30px;
+            transform: translateY(0);
         }
 
         .skill-container {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            width: 80%;
-            max-width: 400px;
+            gap: 12px;
+            width: 100%;
+            max-width: 340px;
         }
 
         .skill-card {
-            background: linear-gradient(to right, #0f3460, #16213e);
-            border: 2px solid #4facfe;
-            border-radius: 15px;
-            padding: 15px 20px;
+            background-color: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.1s, background 0.2s;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
 
-        .skill-card:active {
-            transform: scale(0.95);
-            background: linear-gradient(to right, #4facfe, #00f2fe);
+        .skill-card:hover {
+            border-color: var(--accent-color);
+            background-color: #f1f5f9;
+            transform: translateX(5px);
         }
 
-        .skill-icon {
-            font-size: 2.5rem;
-            margin-right: 15px;
-        }
+        .skill-icon { font-size: 1.8rem; margin-right: 18px; }
+        .skill-info h3 { margin: 0; font-size: 1rem; color: var(--text-main); }
+        .skill-info p { margin: 4px 0 0 0; font-size: 0.8rem; color: var(--text-muted); }
 
-        .skill-info h3 {
-            margin: 0 0 5px 0;
-            color: #fff;
-            font-size: 1.2rem;
-        }
-
-        .skill-info p {
-            margin: 0;
-            color: #aaa;
-            font-size: 0.9rem;
-            text-align: left;
-            font-weight: normal;
-        }
-
-        /* 화면 흔들림 */
-        .shake { animation: shake 0.2s; }
-        @keyframes shake {
-            0%, 100% { transform: translate(0, 0); }
-            25% { transform: translate(-5px, 5px); }
-            50% { transform: translate(5px, -5px); }
-            75% { transform: translate(-5px, -5px); }
-        }
-       
         #damage-flash {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #ff0000;
+            background-color: #000;
             opacity: 0;
             pointer-events: none;
             z-index: 8;
-            transition: opacity 0.1s;
         }
-
-        @media (min-width: 600px) {
-            #game-container { border-radius: 15px; height: 90vh; }
-        }
-
     </style>
 </head>
 <body>
@@ -287,8 +263,8 @@
     <div id="game-container">
         <div id="exp-bar-container"><div id="exp-bar"></div></div>
         <div id="damage-flash"></div>
-        <canvas id="gameCanvas" width="600" height="800"></canvas>
-       
+        <canvas id="gameCanvas"></canvas>
+        
         <div id="joystick-zone">
             <div class="joystick-base" id="joystick-base">
                 <div class="joystick-stick" id="joystick-stick"></div>
@@ -297,552 +273,360 @@
 
         <div id="ui-layer">
             <div class="stat-box">
-                <div id="level-display">Lv.<span id="level">1</span></div>
-                <div id="score-display">처치: <span id="score">0</span></div>
+                <div id="level-display">LV.<span id="level">1</span></div>
+                <div id="score-display"><span id="score">0</span> KILLS</div>
             </div>
-            <div class="stat-box" style="justify-content: center;">
-                <div style="font-weight: bold; margin-bottom: 2px;">HP</div>
+            <div class="stat-box">
+                <div style="font-weight: 800; font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.05em;">HEALTH</div>
                 <div id="hp-bar-container">
                     <div id="hp-bar"></div>
                 </div>
             </div>
         </div>
 
-        <!-- 레벨 업 화면 -->
-        <div id="level-up-screen" class="overlay" style="display: none;">
-            <h1>레벨 업! 🎉</h1>
-            <div class="skill-container" id="skill-container">
-                <!-- 스킬 카드가 JS로 동적 생성됨 -->
-            </div>
-        </div>
-
-        <!-- 시작 화면 -->
+        <!-- Start Screen -->
         <div id="start-screen" class="overlay">
-            <h1>🛸 탕탕 이모지<br>특공대</h1>
-            <p>
-                <strong>[PC]</strong> WASD 이동, F 수동 연사<br>
-                <strong>[모바일]</strong> 화면을 드래그하여 이동<br><br>
-                적을 물리치고 보석(💠)을 모아 레벨 업 하세요!<br>
-                자동 사격으로 몰려오는 적들을 파괴하세요.
-            </p>
-            <button id="start-btn">출동하기</button>
+            <div style="font-size: 4rem; margin-bottom: 20px;">🛸</div>
+            <h1>이모지 특공대</h1>
+            <p>회면 어디든 드래그하여 이동하세요.<br>자동 공격 시스템이 준비되었습니다.</p>
+            <button id="start-btn">작전 시작</button>
         </div>
 
-        <!-- 게임 오버 화면 -->
+        <!-- Level Up Screen -->
+        <div id="level-up-screen" class="overlay" style="display: none;">
+            <h1 style="font-size: 1.5rem; margin-bottom: 20px;">업그레이드 선택</h1>
+            <div class="skill-container" id="skill-container"></div>
+        </div>
+
+        <!-- Game Over Screen -->
         <div id="game-over-screen" class="overlay" style="display: none;">
-            <h1 style="color: #ff5252;">포위당했습니다! 💥</h1>
-            <p>우주선이 파괴되었습니다...</p>
-            <h2 style="color: #4facfe; margin-bottom: 20px;">달성 레벨: Lv.<span id="final-level">1</span></h2>
-            <button id="restart-btn">재도전</button>
+            <h1 style="color: var(--danger-color);">작전 중단</h1>
+            <p>본부와의 연결이 끊어졌습니다.<br>기록: <span id="final-level" style="font-weight: 800;">1</span> 레벨</p>
+            <button id="restart-btn">재출격</button>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const gameContainer = document.getElementById('game-container');
-       
         const scoreElement = document.getElementById('score');
         const levelElement = document.getElementById('level');
         const expBarElement = document.getElementById('exp-bar');
         const hpBarElement = document.getElementById('hp-bar');
         const damageFlash = document.getElementById('damage-flash');
-       
+        
         const startScreen = document.getElementById('start-screen');
         const gameOverScreen = document.getElementById('game-over-screen');
         const levelUpScreen = document.getElementById('level-up-screen');
         const skillContainer = document.getElementById('skill-container');
-        const finalLevelElement = document.getElementById('final-level');
-       
-        const startBtn = document.getElementById('start-btn');
-        const restartBtn = document.getElementById('restart-btn');
 
-        // 조이스틱 UI
+        let CANVAS_WIDTH, CANVAS_HEIGHT;
+        let isGameRunning = false;
+        let isPaused = false;
+        let lastTime = 0;
+        let score = 0;
+        let gameTime = 0;
+        let camera = { x: 0, y: 0 };
+
+        const player = {
+            x: 0, y: 0, size: 40, hp: 100, maxHp: 100,
+            emoji: '🛸', level: 1, exp: 0, maxExp: 5,
+            skills: { damage: 15, fireRate: 0.4, speed: 230, projectiles: 1, range: 350 },
+            shootTimer: 0
+        };
+
+        const SKILL_POOL = [
+            { name: "파워 증가", desc: "공격력이 8 증가합니다.", icon: "💎", apply: () => player.skills.damage += 8 },
+            { name: "연사 속도", desc: "재장전 속도가 빨라집니다.", icon: "⚙️", apply: () => player.skills.fireRate = Math.max(0.12, player.skills.fireRate - 0.05) },
+            { name: "부스터 장착", desc: "이동 속도가 대폭 상승합니다.", icon: "👟", apply: () => player.skills.speed += 50 },
+            { name: "추가 포문", desc: "발사 탄환 개수가 추가됩니다.", icon: "💠", apply: () => player.skills.projectiles += 1 },
+            { name: "자가 수리", desc: "체력을 절반 회복합니다.", icon: "🔧", apply: () => player.hp = Math.min(player.maxHp, player.hp + 50) },
+            { name: "정밀 레이더", desc: "사거리 및 명중을 개선합니다.", icon: "🎯", apply: () => player.skills.range += 80 }
+        ];
+
+        let enemies = [], bullets = [], particles = [], gems = [];
+        let keys = { w: false, a: false, s: false, d: false };
+        let joystick = { active: false, x: 0, y: 0, dx: 0, dy: 0 };
+
+        function resize() {
+            const container = document.getElementById('game-container');
+            CANVAS_WIDTH = container.clientWidth;
+            CANVAS_HEIGHT = container.clientHeight;
+            canvas.width = CANVAS_WIDTH;
+            canvas.height = CANVAS_HEIGHT;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+
         const joystickZone = document.getElementById('joystick-zone');
         const joystickBase = document.getElementById('joystick-base');
         const joystickStick = document.getElementById('joystick-stick');
 
-        const CANVAS_WIDTH = 600;
-        const CANVAS_HEIGHT = 800;
-
-        let isGameRunning = false;
-        let isPaused = false;
-        let animationId;
-        let lastTime = 0;
-
-        let score = 0;
-        let gameTime = 0;
-
-        // 카메라
-        let camera = { x: 0, y: 0 };
-
-        // 플레이어 객체 및 스킬 스탯
-        const player = {
-            x: 0, y: 0,
-            size: 40,
-            hp: 100, maxHp: 100,
-            emoji: '🛸',
-            level: 1, exp: 0, maxExp: 5,
-            skills: {
-                damage: 10,
-                fireRate: 0.3,
-                speed: 250,
-                projectiles: 1, // 한 번에 쏘는 총알 수
-                attackRange: 350
-            },
-            shootTimer: 0
-        };
-
-        // 스킬 풀 (레벨업 시 등장)
-        const SKILL_POOL = [
-            { id: 'dmg', name: "공격력 증가", desc: "레이저의 데미지가 5 증가합니다.", icon: "⚔️", apply: () => player.skills.damage += 5 },
-            { id: 'spd', name: "연사 속도 증가", desc: "레이저 발사 간격이 짧아집니다.", icon: "⚡", apply: () => player.skills.fireRate = Math.max(0.05, player.skills.fireRate - 0.05) },
-            { id: 'mov', name: "이동 속도 증가", desc: "우주선의 이동 속도가 빨라집니다.", icon: "🏃", apply: () => player.skills.speed += 30 },
-            { id: 'mul', name: "다중 발사", desc: "한 번에 발사되는 레이저 개수가 1 증가합니다.", icon: "🚀", apply: () => player.skills.projectiles += 1 },
-            { id: 'heal', name: "긴급 수리", desc: "우주선의 체력을 30 회복합니다.", icon: "💖", apply: () => player.hp = Math.min(player.maxHp, player.hp + 30) },
-            { id: 'rng', name: "사거리 증가", desc: "적을 감지하는 범위가 넓어집니다.", icon: "📡", apply: () => player.skills.attackRange += 50 }
-        ];
-
-        // 개체 배열
-        let enemies = [];
-        let bullets = [];
-        let particles = [];
-        let expGems = [];
-
-        // 입력 상태
-        const keys = { KeyW: false, KeyA: false, KeyS: false, KeyD: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false, KeyF: false };
-        let joystick = { active: false, originX: 0, originY: 0, dx: 0, dy: 0 };
-
-        // --- 입력 처리 ---
-        window.addEventListener('keydown', (e) => {
-            if(keys.hasOwnProperty(e.code)) { keys[e.code] = true; e.preventDefault(); }
-        });
-        window.addEventListener('keyup', (e) => {
-            if(keys.hasOwnProperty(e.code)) { keys[e.code] = false; e.preventDefault(); }
-        });
-        window.addEventListener('blur', () => {
-            for (let key in keys) keys[key] = false;
-            joystick.active = false;
-            joystickBase.style.display = 'none';
-        });
-
-        // 모바일 조이스틱
-        joystickZone.addEventListener('touchstart', (e) => {
+        joystickZone.addEventListener('touchstart', e => {
             if (!isGameRunning || isPaused) return;
-            e.preventDefault();
-            const touch = e.touches[0];
+            const t = e.touches[0];
             const rect = joystickZone.getBoundingClientRect();
             joystick.active = true;
-            joystick.originX = touch.clientX - rect.left;
-            joystick.originY = touch.clientY - rect.top;
-            joystick.dx = 0; joystick.dy = 0;
+            joystick.x = t.clientX - rect.left;
+            joystick.y = t.clientY - rect.top;
             joystickBase.style.display = 'block';
-            joystickBase.style.left = `${joystick.originX}px`;
-            joystickBase.style.top = `${joystick.originY}px`;
-            joystickStick.style.transform = `translate(-50%, -50%)`;
-        }, { passive: false });
+            joystickBase.style.left = joystick.x + 'px';
+            joystickBase.style.top = joystick.y + 'px';
+        });
 
-        joystickZone.addEventListener('touchmove', (e) => {
-            if (!joystick.active || isPaused) return;
+        joystickZone.addEventListener('touchmove', e => {
+            if (!joystick.active) return;
             e.preventDefault();
-            const touch = e.touches[0];
+            const t = e.touches[0];
             const rect = joystickZone.getBoundingClientRect();
-            let currentX = touch.clientX - rect.left;
-            let currentY = touch.clientY - rect.top;
-            let dx = currentX - joystick.originX;
-            let dy = currentY - joystick.originY;
-            let distance = Math.hypot(dx, dy);
-            const maxDist = 50;
-            if (distance > maxDist) { dx = (dx / distance) * maxDist; dy = (dy / distance) * maxDist; distance = maxDist; }
-            joystick.dx = dx / maxDist; joystick.dy = dy / maxDist;
-            joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        }, { passive: false });
+            const curX = t.clientX - rect.left;
+            const curY = t.clientY - rect.top;
+            const dx = curX - joystick.x;
+            const dy = curY - joystick.y;
+            const dist = Math.hypot(dx, dy);
+            const max = 35;
+            const angle = Math.atan2(dy, dx);
+            const clampedDist = Math.min(dist, max);
+            joystick.dx = (Math.cos(angle) * clampedDist) / max;
+            joystick.dy = (Math.sin(angle) * clampedDist) / max;
+            joystickStick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*clampedDist}px), calc(-50% + ${Math.sin(angle)*clampedDist}px))`;
+        });
 
-        const endJoystick = () => {
+        joystickZone.addEventListener('touchend', () => {
             joystick.active = false; joystick.dx = 0; joystick.dy = 0;
             joystickBase.style.display = 'none';
-        };
-        joystickZone.addEventListener('touchend', endJoystick);
-        joystickZone.addEventListener('touchcancel', endJoystick);
-
-        // --- 게임 로직 ---
-        function initGame() {
-            player.x = 0; player.y = 0;
-            player.maxHp = 100; player.hp = 100;
-            player.level = 1; player.exp = 0; player.maxExp = 5;
-            player.skills = { damage: 10, fireRate: 0.3, speed: 250, projectiles: 1, attackRange: 350 };
-            player.shootTimer = 0;
-           
-            score = 0; gameTime = 0;
-            enemies = []; bullets = []; particles = []; expGems = [];
-           
-            updateUI();
-            startScreen.style.display = 'none';
-            gameOverScreen.style.display = 'none';
-            levelUpScreen.style.display = 'none';
-            gameContainer.classList.remove('shake');
-           
-            isGameRunning = true; isPaused = false;
-            lastTime = performance.now();
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function updateUI() {
-            scoreElement.innerText = score;
-            levelElement.innerText = player.level;
-            hpBarElement.style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
-            expBarElement.style.width = `${Math.max(0, (player.exp / player.maxExp) * 100)}%`;
-        }
-
-        function gameOver() {
-            isGameRunning = false;
-            finalLevelElement.innerText = player.level;
-            gameOverScreen.style.display = 'flex';
-            endJoystick();
-        }
-
-        // 레벨업 시스템
-        function gainExp(amount) {
-            player.exp += amount;
-            if (player.exp >= player.maxExp) {
-                player.exp -= player.maxExp;
-                player.level++;
-                player.maxExp = Math.floor(player.maxExp * 1.5); // 다음 요구 경험치 증가
-                triggerLevelUp();
-            }
-            updateUI();
-        }
-
-        function triggerLevelUp() {
-            isPaused = true;
-            endJoystick();
-           
-            // 스킬 3개 랜덤 추출 (중복 없이)
-            let shuffled = [...SKILL_POOL].sort(() => 0.5 - Math.random());
-            let selectedSkills = shuffled.slice(0, 3);
-           
-            skillContainer.innerHTML = '';
-            selectedSkills.forEach(skill => {
-                let card = document.createElement('div');
-                card.className = 'skill-card';
-                card.innerHTML = `
-                    <div class="skill-icon">${skill.icon}</div>
-                    <div class="skill-info">
-                        <h3>${skill.name}</h3>
-                        <p>${skill.desc}</p>
-                    </div>
-                `;
-                card.onclick = () => {
-                    skill.apply();
-                    levelUpScreen.style.display = 'none';
-                    isPaused = false;
-                    lastTime = performance.now(); // 시간 튀는 것 방지
-                };
-                skillContainer.appendChild(card);
-            });
-           
-            levelUpScreen.style.display = 'flex';
-        }
+        });
 
         function spawnEnemy() {
             const angle = Math.random() * Math.PI * 2;
-            const distance = CANVAS_WIDTH;
-           
+            const dist = Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) * 0.75;
             const types = [
-                { emoji: '👾', hp: 20, speed: 100, size: 35, exp: 1 },
-                { emoji: '👽', hp: 30, speed: 80, size: 40, exp: 1 },
-                { emoji: '👻', hp: 10, speed: 150, size: 30, exp: 1 },
-                { emoji: '👹', hp: 80, speed: 60, size: 50, exp: 5 } // 보스급(가끔 나옴)
+                { e: '🌚', hp: 25, spd: 80, exp: 1 },
+                { e: '🌑', hp: 45, spd: 60, exp: 2 },
+                { e: '🌪️', hp: 15, spd: 140, exp: 1 }
             ];
-           
-            let type = (Math.random() < 0.05) ? types[3] : types[Math.floor(Math.random() * 3)];
-           
-            let hpMultiplier = 1 + (gameTime / 60);
-            let speedMultiplier = 1 + (gameTime / 120);
-
+            const t = types[Math.floor(Math.random() * types.length)];
             enemies.push({
-                x: player.x + Math.cos(angle) * distance,
-                y: player.y + Math.sin(angle) * distance,
-                maxHp: type.hp * hpMultiplier,
-                hp: type.hp * hpMultiplier,
-                speed: type.speed * speedMultiplier,
-                size: type.size,
-                emoji: type.emoji,
-                exp: type.exp,
-                wobble: Math.random() * Math.PI * 2
+                x: player.x + Math.cos(angle) * dist,
+                y: player.y + Math.sin(angle) * dist,
+                hp: t.hp * (1 + gameTime/150),
+                spd: t.spd * (1 + gameTime/300),
+                emoji: t.e, exp: t.exp
             });
         }
 
-        function createExplosion(x, y, emojiStr) {
-            for(let i=0; i<4; i++) {
+        function createExplosion(x, y, color = '#64748b') {
+            for(let i=0; i<6; i++) {
                 particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 200, vy: (Math.random() - 0.5) * 200,
-                    life: 0.2 + Math.random() * 0.2, size: 10 + Math.random() * 10,
-                    color: Math.random() > 0.5 ? '#e94560' : '#4facfe'
+                    x, y, vx: (Math.random()-0.5)*200, vy: (Math.random()-0.5)*200,
+                    life: 0.5, color, size: 2 + Math.random()*3
                 });
             }
-            if(emojiStr) {
-                particles.push({ x: x, y: y, vx: 0, vy: -50, life: 0.3, size: 25, emoji: emojiStr });
-            }
         }
 
-        function checkCollision(a, b) {
-            return Math.hypot(a.x - b.x, a.y - b.y) < (a.size/2 + b.size/2);
-        }
-
-        function update(deltaTime) {
+        function update(dt) {
             if (isPaused) return;
-            gameTime += deltaTime;
+            gameTime += dt;
 
-            // 1. 플레이어 이동
-            let moveX = 0; let moveY = 0;
-            if (keys.KeyW || keys.ArrowUp) moveY -= 1;
-            if (keys.KeyS || keys.ArrowDown) moveY += 1;
-            if (keys.KeyA || keys.ArrowLeft) moveX -= 1;
-            if (keys.KeyD || keys.ArrowRight) moveX += 1;
-
-            if (joystick.active) { moveX = joystick.dx; moveY = joystick.dy; }
-
-            if (moveX !== 0 || moveY !== 0) {
-                const len = Math.hypot(moveX, moveY);
-                if (len > 1 || !joystick.active) { moveX /= len; moveY /= len; }
+            let mx = 0, my = 0;
+            if (keys.w) my -= 1; if (keys.s) my += 1;
+            if (keys.a) mx -= 1; if (keys.d) mx += 1;
+            if (joystick.active) { mx = joystick.dx; my = joystick.dy; }
+            const mag = Math.hypot(mx, my);
+            if (mag > 0.05) {
+                player.x += (mx/mag) * player.skills.speed * dt;
+                player.y += (my/mag) * player.skills.speed * dt;
             }
 
-            player.x += moveX * player.skills.speed * deltaTime;
-            player.y += moveY * player.skills.speed * deltaTime;
+            camera.x += (player.x - camera.x) * 5 * dt;
+            camera.y += (player.y - camera.y) * 5 * dt;
 
-            camera.x += (player.x - camera.x) * 5 * deltaTime;
-            camera.y += (player.y - camera.y) * 5 * deltaTime;
-
-            // 2. 보석(경험치) 획득 (자석 범위 살짝 넓게)
-            let magnetRange = player.size + 40;
-            for (let i = expGems.length - 1; i >= 0; i--) {
-                let gem = expGems[i];
-                let dist = Math.hypot(gem.x - player.x, gem.y - player.y);
-               
-                if (dist < magnetRange) {
-                    // 끌려오는 애니메이션
-                    gem.x += (player.x - gem.x) * 10 * deltaTime;
-                    gem.y += (player.y - gem.y) * 10 * deltaTime;
-                   
-                    if (dist < player.size/2) {
-                        gainExp(gem.value);
-                        expGems.splice(i, 1);
-                    }
-                }
-            }
-
-            // 3. 자동 사격 및 다중 발사 로직
-            player.shootTimer += deltaTime;
-            let canShoot = (player.shootTimer >= player.skills.fireRate) || (keys.KeyF && player.shootTimer >= 0.1);
-
-            if (canShoot) {
-                let nearestEnemy = null;
-                let minDist = player.skills.attackRange;
-
-                for (let e of enemies) {
-                    let dist = Math.hypot(e.x - player.x, e.y - player.y);
-                    if (dist < minDist) { minDist = dist; nearestEnemy = e; }
-                }
-
-                if (nearestEnemy) {
-                    let baseAngle = Math.atan2(nearestEnemy.y - player.y, nearestEnemy.x - player.x);
-                    let count = player.skills.projectiles;
-                    let spread = 0.2; // 방사 각도
-                    let startAngle = baseAngle - (spread * (count - 1)) / 2;
-
-                    for (let i = 0; i < count; i++) {
-                        let angle = startAngle + (spread * i);
+            player.shootTimer += dt;
+            if (player.shootTimer >= player.skills.fireRate) {
+                let target = null, minDist = player.skills.range;
+                enemies.forEach(e => {
+                    const d = Math.hypot(e.x - player.x, e.y - player.y);
+                    if (d < minDist) { minDist = d; target = e; }
+                });
+                if (target) {
+                    const angle = Math.atan2(target.y - player.y, target.x - player.x);
+                    for(let i=0; i<player.skills.projectiles; i++) {
+                        const a = angle + (i - (player.skills.projectiles-1)/2) * 0.15;
                         bullets.push({
-                            x: player.x, y: player.y,
-                            vx: Math.cos(angle) * 800, vy: Math.sin(angle) * 800,
-                            size: 15, life: 1.0, damage: player.skills.damage, angle: angle
+                            x: player.x, y: player.y, vx: Math.cos(a)*600, vy: Math.sin(a)*600,
+                            damage: player.skills.damage, life: 1.0
                         });
                     }
                     player.shootTimer = 0;
                 }
             }
 
-            // 4. 총알 이동 및 충돌
-            for (let i = bullets.length - 1; i >= 0; i--) {
-                let b = bullets[i];
-                b.x += b.vx * deltaTime; b.y += b.vy * deltaTime; b.life -= deltaTime;
-                if (b.life <= 0) { bullets.splice(i, 1); continue; }
-
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    let e = enemies[j];
-                    if (checkCollision(b, e)) {
+            for(let i=bullets.length-1; i>=0; i--) {
+                const b = bullets[i];
+                b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+                if (b.life < 0) { bullets.splice(i, 1); continue; }
+                for(let j=enemies.length-1; j>=0; j--) {
+                    const e = enemies[j];
+                    if (Math.hypot(b.x - e.x, b.y - e.y) < 30) {
                         e.hp -= b.damage;
                         bullets.splice(i, 1);
                         createExplosion(b.x, b.y);
-                       
                         if (e.hp <= 0) {
-                            score += 1;
-                            // 죽은 위치에 보석 떨구기
-                            expGems.push({ x: e.x, y: e.y, value: e.exp, size: 10, wobble: Math.random()*10 });
-                            createExplosion(e.x, e.y, '💥');
+                            gems.push({ x: e.x, y: e.y, exp: e.exp });
                             enemies.splice(j, 1);
-                            updateUI();
+                            score++;
                         }
                         break;
                     }
                 }
             }
 
-            // 5. 적 스폰 및 이동
-            let spawnRate = Math.max(0.2, 1.0 - (gameTime / 60));
-            if (Math.random() < deltaTime / spawnRate) spawnEnemy();
+            if (Math.random() < dt * (1.0 + gameTime/50)) spawnEnemy();
+            enemies.forEach(e => {
+                const angle = Math.atan2(player.y - e.y, player.x - e.x);
+                e.x += Math.cos(angle) * e.spd * dt;
+                e.y += Math.sin(angle) * e.spd * dt;
+                if (Math.hypot(e.x - player.x, e.y - player.y) < 30) {
+                    player.hp -= 25 * dt;
+                    damageFlash.style.opacity = 0.4;
+                    setTimeout(() => damageFlash.style.opacity = 0, 50);
+                }
+            });
 
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i];
-                let angle = Math.atan2(player.y - e.y, player.x - e.x);
-               
-                // 적끼리 밀어내기
-                for(let j = 0; j < enemies.length; j++) {
-                    if(i === j) continue;
-                    let other = enemies[j];
-                    if(Math.hypot(e.x - other.x, e.y - other.y) < (e.size + other.size)/2) {
-                        e.x -= Math.cos(angle) * e.speed * 0.5 * deltaTime;
-                        e.y -= Math.sin(angle) * e.speed * 0.5 * deltaTime;
+            for(let i=gems.length-1; i>=0; i--) {
+                const g = gems[i];
+                const d = Math.hypot(g.x - player.x, g.y - player.y);
+                if (d < 200) {
+                    g.x += (player.x - g.x) * 12 * dt;
+                    g.y += (player.y - g.y) * 12 * dt;
+                    if (d < 25) {
+                        player.exp += g.exp;
+                        gems.splice(i, 1);
+                        if (player.exp >= player.maxExp) levelUp();
                     }
                 }
-
-                e.x += Math.cos(angle) * e.speed * deltaTime;
-                e.y += Math.sin(angle) * e.speed * deltaTime;
-                e.wobble += 5 * deltaTime;
-
-                if (checkCollision(player, e)) {
-                    player.hp -= 20 * deltaTime;
-                    damageFlash.style.opacity = '0.3';
-                    setTimeout(() => damageFlash.style.opacity = '0', 50);
-                   
-                    gameContainer.classList.remove('shake');
-                    void gameContainer.offsetWidth;
-                    gameContainer.classList.add('shake');
-                   
-                    updateUI();
-                    if (player.hp <= 0) gameOver();
-                }
             }
 
-            // 파티클 업데이트
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx * deltaTime; p.y += p.vy * deltaTime; p.life -= deltaTime;
-                if (p.life <= 0) particles.splice(i, 1);
-            }
+            particles.forEach((p, i) => {
+                p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+                if (p.life < 0) particles.splice(i, 1);
+            });
+
+            if (player.hp <= 0) endGame();
+            updateUI();
+        }
+
+        function levelUp() {
+            player.level++;
+            player.exp = 0;
+            player.maxExp = Math.floor(player.maxExp * 1.4);
+            isPaused = true;
+            const selected = SKILL_POOL.sort(() => 0.5 - Math.random()).slice(0, 3);
+            skillContainer.innerHTML = '';
+            selected.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'skill-card';
+                card.innerHTML = `<div class="skill-icon">${s.icon}</div><div class="skill-info"><h3>${s.name}</h3><p>${s.desc}</p></div>`;
+                card.onclick = () => { s.apply(); isPaused = false; levelUpScreen.style.display = 'none'; };
+                skillContainer.appendChild(card);
+            });
+            levelUpScreen.style.display = 'flex';
+        }
+
+        function updateUI() {
+            scoreElement.innerText = score;
+            levelElement.innerText = player.level;
+            hpBarElement.style.width = Math.max(0, player.hp / player.maxHp * 100) + '%';
+            expBarElement.style.width = (player.exp / player.maxExp * 100) + '%';
         }
 
         function draw() {
-            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
             ctx.save();
-            ctx.translate(CANVAS_WIDTH / 2 - camera.x, CANVAS_HEIGHT / 2 - camera.y);
+            ctx.translate(CANVAS_WIDTH/2 - camera.x, CANVAS_HEIGHT/2 - camera.y);
 
-            // 바닥 그리드
-            ctx.strokeStyle = '#0f3460'; ctx.lineWidth = 2;
+            // 미니멀 그리드
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
             const gridSize = 100;
-            let startX = Math.floor((camera.x - CANVAS_WIDTH/2) / gridSize) * gridSize;
-            let startY = Math.floor((camera.y - CANVAS_HEIGHT/2) / gridSize) * gridSize;
-            ctx.beginPath();
-            for (let x = startX; x < startX + CANVAS_WIDTH + gridSize; x += gridSize) {
-                ctx.moveTo(x, startY); ctx.lineTo(x, startY + CANVAS_HEIGHT + gridSize);
+            const startX = Math.floor((camera.x - CANVAS_WIDTH/2) / gridSize) * gridSize - gridSize;
+            const endX = Math.floor((camera.x + CANVAS_WIDTH/2) / gridSize) * gridSize + gridSize;
+            const startY = Math.floor((camera.y - CANVAS_HEIGHT/2) / gridSize) * gridSize - gridSize;
+            const endY = Math.floor((camera.y + CANVAS_HEIGHT/2) / gridSize) * gridSize + gridSize;
+            for(let x = startX; x <= endX; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, startY); ctx.lineTo(x, endY); ctx.stroke();
             }
-            for (let y = startY; y < startY + CANVAS_HEIGHT + gridSize; y += gridSize) {
-                ctx.moveTo(startX, y); ctx.lineTo(startX + CANVAS_WIDTH + gridSize, y);
-            }
-            ctx.stroke();
-
-            // 경험치 보석 그리기
-            for (let gem of expGems) {
-                gem.wobble += 0.1;
-                ctx.fillStyle = gem.value > 1 ? '#f1c40f' : '#00f2fe'; // 보스 보석은 노란색
-                ctx.beginPath();
-                // 마름모 형태
-                ctx.moveTo(gem.x, gem.y - gem.size + Math.sin(gem.wobble)*3);
-                ctx.lineTo(gem.x + gem.size/1.5, gem.y + Math.sin(gem.wobble)*3);
-                ctx.lineTo(gem.x, gem.y + gem.size + Math.sin(gem.wobble)*3);
-                ctx.lineTo(gem.x - gem.size/1.5, gem.y + Math.sin(gem.wobble)*3);
-                ctx.fill();
+            for(let y = startY; y <= endY; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y); ctx.stroke();
             }
 
-            // 파티클
-            for (let p of particles) {
-                if (p.emoji) {
-                    ctx.globalAlpha = Math.max(0, p.life * 2);
-                    ctx.font = `${p.size}px Arial`;
-                    ctx.fillText(p.emoji, p.x, p.y);
-                } else {
-                    ctx.fillStyle = p.color;
-                    ctx.globalAlpha = Math.max(0, p.life * 3);
-                    ctx.beginPath();
-                    ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-                    ctx.fill();
-                }
-            }
-            ctx.globalAlpha = 1.0;
-
-            // 총알 (레이저)
-            ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 4; ctx.lineCap = 'round';
-            for (let b of bullets) {
-                ctx.beginPath(); ctx.moveTo(b.x, b.y);
-                ctx.lineTo(b.x - Math.cos(b.angle) * b.size, b.y - Math.sin(b.angle) * b.size);
-                ctx.stroke();
-            }
+            // 보석 (에너지 파편)
+            gems.forEach(g => {
+                ctx.fillStyle = '#94a3b8';
+                ctx.beginPath(); ctx.roundRect(g.x-4, g.y-4, 8, 8, 2); ctx.fill();
+            });
 
             // 적
+            ctx.font = '32px serif';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            for (let e of enemies) {
-                ctx.save(); ctx.translate(e.x, e.y);
-                ctx.rotate(Math.sin(e.wobble) * 0.15);
-                if (e.hp < e.maxHp) {
-                    ctx.fillStyle = 'red'; ctx.fillRect(-15, -e.size/2 - 10, 30, 4);
-                    ctx.fillStyle = '#4facfe'; ctx.fillRect(-15, -e.size/2 - 10, 30 * (e.hp/e.maxHp), 4);
-                }
-                ctx.font = `${e.size}px Arial`; ctx.fillText(e.emoji, 0, 0);
-                ctx.restore();
-            }
+            enemies.forEach(e => { ctx.fillText(e.emoji, e.x, e.y); });
+
+            // 탄환 (그레이 캡슐)
+            bullets.forEach(b => {
+                ctx.fillStyle = '#475569';
+                ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fill();
+            });
+
+            // 파티클
+            particles.forEach(p => {
+                ctx.fillStyle = p.color; ctx.globalAlpha = p.life;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha = 1;
 
             // 플레이어
-            ctx.save(); ctx.translate(player.x, player.y);
-            let tiltX = 0;
-            if (joystick.active) tiltX = joystick.dx;
-            else {
-                if (keys.KeyA || keys.ArrowLeft) tiltX = -1;
-                if (keys.KeyD || keys.ArrowRight) tiltX = 1;
-            }
-            ctx.rotate(tiltX * 0.2);
+            ctx.font = '42px serif';
+            ctx.fillText(player.emoji, player.x, player.y);
+            
+            // 사거리 원
+            ctx.strokeStyle = 'rgba(71, 85, 105, 0.05)';
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.skills.range, 0, Math.PI*2); ctx.stroke();
 
-            ctx.font = '25px Arial'; ctx.globalAlpha = 0.5 + Math.random() * 0.5;
-            ctx.fillText('🔥', 0, 20); ctx.globalAlpha = 1.0;
-            ctx.font = `${player.size}px Arial`; ctx.fillText(player.emoji, 0, 0);
-           
-            ctx.strokeStyle = 'rgba(79, 172, 254, 0.1)'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.arc(0, 0, player.skills.attackRange, 0, Math.PI*2); ctx.stroke();
-           
-            ctx.restore();
             ctx.restore();
         }
 
-        function gameLoop(currentTime) {
+        function gameLoop(time) {
             if (!isGameRunning) return;
-            const deltaTime = (currentTime - lastTime) / 1000;
-            lastTime = currentTime;
-
-            if (!isPaused && deltaTime < 0.2) {
-                update(deltaTime);
-            }
-            draw(); // 멈춰있을 때도 화면은 계속 그려서 검은 화면 방지
-
-            if (isGameRunning) {
-                animationId = requestAnimationFrame(gameLoop);
-            }
+            const dt = Math.min((time - lastTime) / 1000, 0.1);
+            lastTime = time;
+            update(dt);
+            draw();
+            requestAnimationFrame(gameLoop);
         }
 
-        startBtn.addEventListener('click', initGame);
-        restartBtn.addEventListener('click', initGame);
-        draw(); // 초기 화면
+        function startGame() {
+            player.x = 0; player.y = 0; player.hp = 100; player.level = 1; player.exp = 0;
+            player.skills = { damage: 15, fireRate: 0.4, speed: 230, projectiles: 1, range: 350 };
+            enemies = []; bullets = []; gems = []; score = 0; gameTime = 0;
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            isGameRunning = true; isPaused = false;
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
 
+        function endGame() {
+            isGameRunning = false;
+            document.getElementById('final-level').innerText = player.level;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        document.getElementById('start-btn').onclick = startGame;
+        document.getElementById('restart-btn').onclick = startGame;
     </script>
 </body>
 </html>
